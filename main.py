@@ -1,4 +1,5 @@
-from functions import *
+from functions.signal import *
+from functions.visualization import *
 
 CONFIG = {
     "num_components": 4,
