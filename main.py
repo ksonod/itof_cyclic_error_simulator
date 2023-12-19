@@ -2,12 +2,12 @@ from functions.signal import *
 from functions.visualization import *
 
 CONFIG = {
-    "num_components": 4,
+    "num_components": 4,  # Number of components
     "phase_shift": [0, 90, 180, 270],  # in degree
     "modulation_frequency": 20e6,  # Hz
-    "duty_cycle": 0.5,
-    "num_time_samples": 3000,
-    "figure": {
+    "duty_cycle": 0.5,  # Duty cycle between 0 and 1
+    "num_time_samples": 3000,  # Number of samples in time domain.
+    "figure": {  # Figure config
         "show_signals": True,
         "show_spectra": True,
         "show_phase_signals_and_cyclic_error": True

@@ -4,10 +4,16 @@ from data_model.simulation_data import SimulationData
 
 
 class PhaseSimulator:
-    def __init__(self, config):
+    """
+    With PhaseSimulator, sensor demodulation signal, source modulation signal, and their correlation signal can be
+    calculated. Using these values, phase is computed. The computed phase is compared with ground-truth phase in order
+    to evaluate phase error.
+    """
+
+    def __init__(self, config: dict):
         self.simulation_data = None
         self.speed_of_light = 299792458  # m/s
-        self.config = config
+        self.config = config  # config dict
 
     def __call__(self):
         self.prepare_basic_simulation_data()
@@ -16,9 +22,12 @@ class PhaseSimulator:
         return self.simulation_data
 
     def prepare_basic_simulation_data(self):
+        """
+        Prepare basic data for further simulation.
+        """
 
         if "phase_shift" in self.config:
-            phase_shift = self.config["phase_shift"]
+            phase_shift = np.deg2rad(self.config["phase_shift"])
         else:
             phase_shift = self.config["num_components"] * [0]
 
@@ -35,6 +44,7 @@ class PhaseSimulator:
         dist_unambiguous = 0.5 * self.speed_of_light / self.config["modulation_frequency"]  # unambiguous range
         gt_phase = dist / dist_unambiguous * 2 * np.pi  # Ground truth phase
 
+        # Save all basic simulation data
         self.simulation_data = SimulationData(
             modulation_frequency=self.config["modulation_frequency"],
             t=t,
@@ -51,55 +61,50 @@ class PhaseSimulator:
 
     def generate_signals(self):
         """
-        Generate source modulation signal (illumination signal), sensor demodulation signal (local oscillator signal), and
-        their correlation signal.
-
-        :param config:
+        Generate source modulation signal (illumination signal), sensor demodulation signal (local oscillator signal),
+        and their correlation signal.
         """
-
-        source_mod_signal = {}  # source modulation signal
-        sensor_demod_signal = {}  # sensor demodulation signal
-        correlation_signal = {}  # correlation of source modulation and sensor demodulation signals.
-        fft_sensor_demod_signal = {}
-        fft_source_mod_signal = {}
-        fft_correlation_signal = {}
 
         for comp_idx in range(self.simulation_data.num_components):
 
-            # Construct sensor demodulation signal and source modulation signal.
-            phi = self.simulation_data.phase_shift[comp_idx]/180 * np.pi  # rad
-            sensor_demod_signal[f"component{comp_idx}"] = signal.square(2 * np.pi * self.simulation_data.modulation_frequency * self.simulation_data.t)
-            source_mod_signal[f"component{comp_idx}"] = 0.5 * (
+            # Step1: Construct sensor demodulation signal and source modulation signal.
+            phi = self.simulation_data.phase_shift[comp_idx]  # rad
+
+            self.simulation_data.sensor_demodulation_signal[f"component{comp_idx}"] = signal.square(
+                2 * np.pi * self.simulation_data.modulation_frequency * self.simulation_data.t
+            )
+
+            self.simulation_data.source_modulation_signal[f"component{comp_idx}"] = 0.5 * (
                     signal.square(
-                        2 * np.pi * self.simulation_data.modulation_frequency * self.simulation_data.t-phi,
+                        2 * np.pi * self.simulation_data.modulation_frequency * self.simulation_data.t - phi,
                         duty=self.simulation_data.duty_cycle
                     ) + 1
             )
 
+            # Step2: Get correlation in time domain by calculating inverse FFT of multiplication in frequency domain.
+            self.simulation_data.fft_sensor_demodulation_signal[f"component{comp_idx}"] = np.fft.fft(
+                self.simulation_data.sensor_demodulation_signal[f"component{comp_idx}"]
+            )
 
-            # Get correlation in time domain by calculating inverse FFT of multiplication in frequency domain.
-            fft_sensor_demod_signal[f"component{comp_idx}"] = np.fft.fft(
-                sensor_demod_signal[f"component{comp_idx}"]
+            self.simulation_data.fft_source_modulation_signal[f"component{comp_idx}"] = np.fft.fft(
+                self.simulation_data.source_modulation_signal[f"component{comp_idx}"]
             )
-            fft_source_mod_signal[f"component{comp_idx}"] = np.fft.fft(
-                source_mod_signal[f"component{comp_idx}"]
-            )
-            fft_correlation_signal[f"component{comp_idx}"] = fft_sensor_demod_signal[f"component{comp_idx}"] * np.conj(fft_source_mod_signal[f"component{comp_idx}"])
+
+            self.simulation_data.fft_correlation_signal[f"component{comp_idx}"] = \
+                self.simulation_data.fft_sensor_demodulation_signal[f"component{comp_idx}"] * \
+                np.conj(self.simulation_data.fft_source_modulation_signal[f"component{comp_idx}"])
+
             corr_signal = np.real(
                 np.fft.ifft(
-                    fft_correlation_signal[f"component{comp_idx}"]
+                    self.simulation_data.fft_correlation_signal[f"component{comp_idx}"]
                 )
             )
-            correlation_signal[f"component{comp_idx}"] = corr_signal/np.max(np.abs(corr_signal))
-
-        self.simulation_data.sensor_demodulation_signal = sensor_demod_signal
-        self.simulation_data.source_modulation_signal = source_mod_signal
-        self.simulation_data.correlation_signal = correlation_signal
-        self.simulation_data.fft_sensor_demodulation_signal = fft_sensor_demod_signal
-        self.simulation_data.fft_source_mod_signal = fft_source_mod_signal
-        self.simulation_data.fft_correlation_signal = fft_correlation_signal
+            self.simulation_data.correlation_signal[f"component{comp_idx}"] = corr_signal/np.max(np.abs(corr_signal))
 
     def calculate_phase_and_cyclic_error(self):
+        """
+        Calculate phase and cyclic error (a.k.a. wiggling error)
+        """
         simulated_phase = []
 
         for time_idx in range(self.simulation_data.t.shape[0]):
@@ -117,5 +122,5 @@ class PhaseSimulator:
         if np.sum(simulated_phase > 2*np.pi) != 0:  # If most phase data are above 2pi because of unwrapping, 2pi is subtracted.
             simulated_phase -= 2 * np.pi
 
-        self.simulation_data.cyclic_error = simulated_phase-self.simulation_data.gt_phase
+        self.simulation_data.cyclic_error = simulated_phase - self.simulation_data.gt_phase
         self.simulation_data.simulated_phase = simulated_phase

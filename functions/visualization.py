@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from data_model.simulation_data import SimulationData
 
+
 class DataVisualizer:
     def __init__(self, figure_config: dict, dat: SimulationData):
         self.figure_config = figure_config
@@ -16,10 +17,11 @@ class DataVisualizer:
         if self.figure_config["show_phase_signals_and_cyclic_error"]:
             self.show_phase_signals_and_cyclic_error(self.dat)
 
-    def show_signals(self, dat: SimulationData):
+    @staticmethod
+    def show_signals(dat: SimulationData):
         """
-        :param dat:
-        :return:
+        Show sensor and illumination signals
+        :param dat: SimulationData
         """
 
         plt.figure(figsize=(11, 9))
@@ -43,11 +45,16 @@ class DataVisualizer:
             if idx == dat.num_components-1:
                 plt.xlabel("Distance (m)")
 
-    def show_spectra(self, dat: SimulationData):
+    @staticmethod
+    def show_spectra(dat: SimulationData):
+        """
+        Visualize FT Spectra.
+        :param dat:  SimulationData
+        """
 
         dat_stock = [
             dat.fft_sensor_demodulation_signal,
-            dat.fft_source_mod_signal,
+            dat.fft_source_modulation_signal,
             dat.fft_correlation_signal
         ]
 
@@ -61,18 +68,19 @@ class DataVisualizer:
         for idx, fft_dat in enumerate(dat_stock):
             plt.subplot(3, 1, idx+1)
 
-            fft_signal = np.abs(fft_dat["component0"])[:int(dat.t.shape[0]*0.5)]
+            fft_signal = np.abs(fft_dat["component0"])[:int(np.round(dat.t.shape[0]*0.5))]
             plt.plot(
-                dat.freq[:int(dat.t.shape[0]*0.5)] / dat.modulation_frequency,
+                dat.freq[:int(np.round(dat.t.shape[0]*0.5))] / dat.modulation_frequency,
                 fft_signal/np.max(fft_signal),
                 "k.-"
             )
             plt.xlim([0, 20])
-            plt.annotate(text=label[idx], xy=(10, 0.9))
+            plt.annotate(text=label[idx], xy=(15, 0.9))
             plt.gca().get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
         plt.xlabel("Harmonic order")
 
-    def show_phase_signals_and_cyclic_error(self, dat: SimulationData):
+    @staticmethod
+    def show_phase_signals_and_cyclic_error(dat: SimulationData):
 
         plt.figure(figsize=(12,4))
         plt.subplot(121)
