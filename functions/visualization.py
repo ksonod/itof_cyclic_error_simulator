@@ -1,77 +1,88 @@
 import numpy as np
-from scipy.constants import speed_of_light
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+from data_model.simulation_data import SimulationData
 
+class DataVisualizer:
+    def __init__(self, figure_config: dict, dat: SimulationData):
+        self.figure_config = figure_config
+        self.dat = dat
 
-def show_signals(dat: dict, config: dict):
-    """
+    def __call__(self):
+        if self.figure_config["show_signals"]:
+            self.show_signals(self.dat)
+        if self.figure_config["show_spectra"]:
+            self.show_spectra(self.dat)
+        if self.figure_config["show_phase_signals_and_cyclic_error"]:
+            self.show_phase_signals_and_cyclic_error(self.dat)
 
-    :param dat:
-    :param config:
-    :return:
-    """
+    def show_signals(self, dat: SimulationData):
+        """
+        :param dat:
+        :return:
+        """
 
-    t = np.linspace(0, 1 / config["modulation_frequency"], config["num_time_samples"], endpoint=False)  # time in s
-    dist = 0.5 * t * speed_of_light
+        plt.figure(figsize=(11, 9))
+        for idx in range(dat.num_components):
+            plt.subplot(dat.num_components, 2, 2*idx+1)
+            plt.plot(dat.t*1e9, dat.sensor_demodulation_signal[f"component{idx}"], "b-", label="sensor")
+            plt.plot(dat.t*1e9, dat.source_modulation_signal[f"component{idx}"], "r-", label="illum.")
+            plt.legend()
 
-    plt.figure(figsize=(11, 9))
-    for idx in range(config["num_components"]):
-        plt.subplot(config["num_components"], 2, 2*idx+1)
-        plt.plot(t*1e9, dat["sensor_demodulation_signal"][f"component{idx}"], "b-", label="sensor")
-        plt.plot(t*1e9, dat["source_modulation_signal"][f"component{idx}"], "r-", label="illum.")
+            if idx == 0:
+                plt.title("Sensor and illumination signals")
+
+            if idx == dat.num_components-1:  # Last
+                plt.xlabel("Time (ns)")
+
+            plt.subplot(dat.num_components, 2, 2*idx+2)
+            plt.plot(dat.gt_distance, 0.5 * (dat.correlation_signal[f"component{idx}"]+1), "k-")
+
+            if idx == 0:
+                plt.title("Correlation signals")
+            if idx == dat.num_components-1:
+                plt.xlabel("Distance (m)")
+
+    def show_spectra(self, dat: SimulationData):
+
+        dat_stock = [
+            dat.fft_sensor_demodulation_signal,
+            dat.fft_source_mod_signal,
+            dat.fft_correlation_signal
+        ]
+
+        label = [
+            "Sensor",
+            "Illumination",
+            "Correlation"
+        ]
+
+        plt.figure(figsize=(6, 8))
+        for idx, fft_dat in enumerate(dat_stock):
+            plt.subplot(3, 1, idx+1)
+
+            fft_signal = np.abs(fft_dat["component0"])[:int(dat.t.shape[0]*0.5)]
+            plt.plot(
+                dat.freq[:int(dat.t.shape[0]*0.5)] / dat.modulation_frequency,
+                fft_signal/np.max(fft_signal),
+                "k.-"
+            )
+            plt.xlim([0, 20])
+            plt.annotate(text=label[idx], xy=(10, 0.9))
+            plt.gca().get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
+        plt.xlabel("Harmonic order")
+
+    def show_phase_signals_and_cyclic_error(self, dat: SimulationData):
+
+        plt.figure(figsize=(12,4))
+        plt.subplot(121)
+        plt.plot(dat.gt_phase, dat.gt_phase, "k--", label="GT")
+        plt.plot(dat.gt_phase, dat.simulated_phase, "r-", label="Simulated phase")
+        plt.xlabel("Ground-truth phase (rad.)")
+        plt.ylabel("Phase (rad.)")
         plt.legend()
 
-        if idx == 0:
-            plt.title("Sensor demodulation and source modulation signals")
-
-        if idx == config["num_components"]-1:
-            plt.xlabel("Time (ns)")
-
-        plt.subplot(config["num_components"], 2, 2*idx+2)
-        plt.plot(dist, 0.5 * (dat["correlation_signal"][f"component{idx}"]+1), "k-")
-
-        if idx == 0:
-            plt.title("Correlation signals")
-        if idx == config["num_components"]-1:
-            plt.xlabel("Distance (m)")
-
-
-def show_spectra(dat: dict, config: dict):
-
-    t = np.linspace(0, 1 / config["modulation_frequency"], config["num_time_samples"], endpoint=False)  # time in s
-    freq = np.fft.fftfreq(config["num_time_samples"], t[1] - t[0])
-
-    fft_keys = [x for x in list(dat.keys()) if "fft" in x]
-
-    plt.figure(figsize=(6, 8))
-    for idx, fft_key in enumerate(fft_keys):
-        plt.subplot(3, 1, idx+1)
-
-        fft_signal = np.abs(dat[fft_key]["component0"])[:int(config["num_time_samples"]*0.5)]
-        plt.plot(
-            freq[:int(config["num_time_samples"]*0.5)]/config["modulation_frequency"],
-            fft_signal/np.max(fft_signal),
-            "k.-"
-        )
-        plt.xlim([0, 20])
-        plt.annotate(text=fft_key, xy=(10, 0.9))
-        plt.gca().get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
-    plt.xlabel("Harmonic order")
-
-
-def show_phase_signals_and_cyclic_error(dat: dict):
-
-    plt.figure(figsize=(12,4))
-    plt.subplot(121)
-    plt.plot(dat["gt_phase"], dat["gt_phase"], "k--", label="GT")
-    plt.plot(dat["gt_phase"], dat["measured_phase"], "r-", label="Measured phase")
-    plt.xlabel("Ground-truth phase (rad.)")
-    plt.ylabel("Phase (rad.)")
-    plt.legend()
-
-    plt.subplot(122)
-    plt.plot(dat["gt_phase"], dat["cyclic_error"], "k-")
-    plt.xlabel("Ground-truth phase (rad.)")
-    plt.ylabel("Phase error (rad.)")
-
+        plt.subplot(122)
+        plt.plot(dat.gt_phase, dat.cyclic_error, "k-")
+        plt.xlabel("Ground-truth phase (rad.)")
+        plt.ylabel("Phase error (rad.)")
