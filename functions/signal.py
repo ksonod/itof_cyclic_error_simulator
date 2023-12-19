@@ -36,6 +36,13 @@ class PhaseSimulator:
         else:
             duty_cycle = 0.0
 
+        if "source_modulation_signal_phase_offset" in self.config:
+            source_modulation_signal_phase_offset = np.deg2rad(
+                self.config["source_modulation_signal_phase_offset"]
+            )  # in rad
+        else:
+            source_modulation_signal_phase_offset = 0.0
+
         t = np.linspace(
             0, 1/self.config["modulation_frequency"], self.config["num_time_samples"],
             endpoint=False
@@ -54,6 +61,7 @@ class PhaseSimulator:
             dist_unambiguous=dist_unambiguous,
             num_components=self.config["num_components"],
             phase_shift=phase_shift,
+            source_modulation_signal_phase_offset=source_modulation_signal_phase_offset,
             duty_cycle=duty_cycle,
             simulated_phase=np.zeros_like(t),
             cyclic_error=np.zeros_like(t)
@@ -76,7 +84,7 @@ class PhaseSimulator:
 
             self.simulation_data.source_modulation_signal[f"component{comp_idx}"] = 0.5 * (
                     signal.square(
-                        2 * np.pi * self.simulation_data.modulation_frequency * self.simulation_data.t - phi,
+                        2 * np.pi * self.simulation_data.modulation_frequency * self.simulation_data.t - phi - self.simulation_data.source_modulation_signal_phase_offset,
                         duty=self.simulation_data.duty_cycle
                     ) + 1
             )
@@ -100,6 +108,7 @@ class PhaseSimulator:
                 )
             )
             self.simulation_data.correlation_signal[f"component{comp_idx}"] = corr_signal/np.max(np.abs(corr_signal))
+        return 0
 
     def calculate_phase_and_cyclic_error(self):
         """
@@ -125,6 +134,7 @@ class PhaseSimulator:
         cyclic_error -= center_ce
         simulated_phase -= center_ce
 
-        # Store simualted data
+        # Store simulated data
         self.simulation_data.cyclic_error = cyclic_error
         self.simulation_data.simulated_phase = simulated_phase
+        self.simulation_data.rms_phase_error = np.sqrt(np.mean(cyclic_error**2))

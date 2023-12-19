@@ -7,6 +7,7 @@ CONFIG = {
     "modulation_frequency": 20e6,  # Hz
     "duty_cycle": 0.5,  # Duty cycle between 0 and 1
     "num_time_samples": 3000,  # Number of samples in time domain.
+    # "source_modulation_signal_phase_offset": 45,  # in degree
     "figure": {  # Figure config
         "show_signals": True,
         "show_spectra": True,
