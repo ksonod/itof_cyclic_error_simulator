@@ -58,3 +58,20 @@ def show_spectra(dat: dict, config: dict):
         plt.annotate(text=fft_key, xy=(10, 0.9))
         plt.gca().get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
     plt.xlabel("Harmonic order")
+
+
+def show_phase_signals_and_cyclic_error(dat: dict):
+
+    plt.figure(figsize=(12,4))
+    plt.subplot(121)
+    plt.plot(dat["gt_phase"], dat["gt_phase"], "k--", label="GT")
+    plt.plot(dat["gt_phase"], dat["measured_phase"], "r-", label="Measured phase")
+    plt.xlabel("Ground-truth phase (rad.)")
+    plt.ylabel("Phase (rad.)")
+    plt.legend()
+
+    plt.subplot(122)
+    plt.plot(dat["gt_phase"], dat["cyclic_error"], "k-")
+    plt.xlabel("Ground-truth phase (rad.)")
+    plt.ylabel("Phase error (rad.)")
+
