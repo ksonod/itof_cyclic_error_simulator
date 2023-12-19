@@ -117,10 +117,14 @@ class PhaseSimulator:
             simulated_phase.append(np.angle(fft_sampled_corr_signal)[1])
 
         simulated_phase = np.array(simulated_phase)
+
+        # Correct phase wrapping effect
         simulated_phase = np.unwrap(np.mod(simulated_phase, 2 * np.pi), period=2*np.pi)
+        cyclic_error = simulated_phase - self.simulation_data.gt_phase
+        center_ce = np.mean(cyclic_error)
+        cyclic_error -= center_ce
+        simulated_phase -= center_ce
 
-        if np.sum(simulated_phase > 2*np.pi) != 0:  # If most phase data are above 2pi because of unwrapping, 2pi is subtracted.
-            simulated_phase -= 2 * np.pi
-
-        self.simulation_data.cyclic_error = simulated_phase - self.simulation_data.gt_phase
+        # Store simualted data
+        self.simulation_data.cyclic_error = cyclic_error
         self.simulation_data.simulated_phase = simulated_phase
