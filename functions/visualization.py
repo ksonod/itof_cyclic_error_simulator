@@ -108,6 +108,8 @@ class DataVisualizer:
         x_gt_data = dat.gt_phase
         y_simulated_data = dat.simulated_phase
         y_cyclic_error_data = dat.cyclic_error
+        y_fft_cyclic_error_data = np.abs(dat.fft_cyclic_error[:int(np.round(0.5*dat.t.shape[0]))])
+        y_fft_cyclic_error_data /= np.max(y_fft_cyclic_error_data)
 
         if "unit" in figure_config:
             if figure_config["unit"] == DepthUnit.RADIAN:
@@ -132,15 +134,27 @@ class DataVisualizer:
         ylabel.insert(1, "error")
         ylabel = " ".join(ylabel)
 
-        plt.figure(figsize=(12, 4))
-        plt.subplot(121)
+        plt.figure(figsize=(15, 4))
+        plt.subplot(131)
         plt.plot(x_gt_data, x_gt_data, "k--", label="GT")
         plt.plot(x_gt_data, y_simulated_data, "r-", label="Simulation")
         plt.xlabel("Ground-truth " + figure_config["unit"].value.lower())
         plt.ylabel(figure_config["unit"].value)
         plt.legend()
 
-        plt.subplot(122)
+        plt.subplot(132)
         plt.plot(x_gt_data, y_cyclic_error_data, "k-")
         plt.xlabel("Ground-truth " + figure_config["unit"].value.lower())
         plt.ylabel(ylabel)
+
+        plt.subplot(133)
+        plt.plot(
+            dat.freq[:int(np.round(0.5*dat.t.shape[0]))]/dat.modulation_frequency,
+            y_fft_cyclic_error_data,
+            "k.-"
+        )
+        plt.xlabel("Harmonic order")
+        plt.xlim([0, 30])
+        plt.ylabel(ylabel)
+        plt.gca().get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
+        plt.tight_layout()

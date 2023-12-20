@@ -15,7 +15,8 @@ class SimulationData:
     duty_cycle: float  # duty cycle between 0 and 1
     simulated_phase: np.ndarray  # simulated phase in radian
     cyclic_error: np.ndarray  # cyclic error = Difference between simulated and GT phases
-    source_modulation_signal_phase_offset: float = field(default=0.0)  # constant phase offset in rad for illumination singla
+    fft_cyclic_error: np.ndarray  # FFT of cyclic error
+    source_modulation_signal_phase_offset: float = field(default=0.0)  # constant phase offset in rad for illumination signal
     rms_phase_error: float = field(default=0.0)  # root mean square error of cyclic error
     phase_shift: list[int] = field(default_factory=list)  # phase shift in radian applied to different components
     sensor_demodulation_signal: dict = field(default_factory=dict)  # Sensor demodulation signal

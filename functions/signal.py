@@ -48,6 +48,7 @@ class PhaseSimulator:
             endpoint=False
         )  # time in s
         dist = 0.5 * t * self.speed_of_light  # distance in m
+        freq = np.fft.fftfreq(self.config["num_time_samples"], t[1] - t[0])
         dist_unambiguous = calculate_unambiguous_range(self.config["modulation_frequency"])  # unambiguous range
         gt_phase = dist / dist_unambiguous * 2 * np.pi  # Ground truth phase
 
@@ -55,12 +56,13 @@ class PhaseSimulator:
         self.simulation_data = SimulationData(
             modulation_frequency=self.config["modulation_frequency"],
             t=t,
-            freq=np.fft.fftfreq(self.config["num_time_samples"], t[1] - t[0]),
+            freq=freq,
             gt_distance=dist,
             gt_phase=gt_phase,
             dist_unambiguous=dist_unambiguous,
             num_components=self.config["num_components"],
             phase_shift=phase_shift,
+            fft_cyclic_error=np.zeros_like(freq),
             source_modulation_signal_phase_offset=source_modulation_signal_phase_offset,
             duty_cycle=duty_cycle,
             simulated_phase=np.zeros_like(t),
@@ -136,5 +138,6 @@ class PhaseSimulator:
 
         # Store simulated data
         self.simulation_data.cyclic_error = cyclic_error
+        self.simulation_data.fft_cyclic_error = np.fft.fft(cyclic_error)
         self.simulation_data.simulated_phase = simulated_phase
         self.simulation_data.rms_phase_error = np.sqrt(np.mean(cyclic_error**2))
