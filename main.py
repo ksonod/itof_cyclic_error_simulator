@@ -1,5 +1,6 @@
-from functions.signal import *
-from functions.visualization import *
+from functions.signal import PhaseSimulator
+from functions.visualization import DepthUnit, DataVisualizer
+import matplotlib.pyplot as plt
 
 CONFIG = {
     "num_components": 4,  # Number of components
@@ -11,7 +12,8 @@ CONFIG = {
     "figure": {  # Figure config
         "show_signals": True,
         "show_spectra": True,
-        "show_phase_signals_and_cyclic_error": True
+        "show_phase_signals_and_cyclic_error": True,
+        "unit": DepthUnit.RADIAN
     }
 }
 

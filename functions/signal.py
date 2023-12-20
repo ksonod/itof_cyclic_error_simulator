@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import signal
 from data_model.simulation_data import SimulationData
-
+from functions.utils.math_calc import c_light_speed, calculate_unambiguous_range
 
 class PhaseSimulator:
     """
@@ -12,7 +12,7 @@ class PhaseSimulator:
 
     def __init__(self, config: dict):
         self.simulation_data = None
-        self.speed_of_light = 299792458  # m/s
+        self.speed_of_light = c_light_speed
         self.config = config  # config dict
 
     def __call__(self):
@@ -48,7 +48,7 @@ class PhaseSimulator:
             endpoint=False
         )  # time in s
         dist = 0.5 * t * self.speed_of_light  # distance in m
-        dist_unambiguous = 0.5 * self.speed_of_light / self.config["modulation_frequency"]  # unambiguous range
+        dist_unambiguous = calculate_unambiguous_range(self.config["modulation_frequency"])  # unambiguous range
         gt_phase = dist / dist_unambiguous * 2 * np.pi  # Ground truth phase
 
         # Save all basic simulation data
