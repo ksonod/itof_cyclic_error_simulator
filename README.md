@@ -1,5 +1,6 @@
 # About this Repository
-This is a repository of indirect-ToF phase simulator to assess wiggling phase errors.
+![image info](./docs/image/image1.png)  
+This is a repository of indirect-ToF phase simulator to assess wiggling phase errors.  
 
 # Code
 -  You can visually see what can be done with the simulator in [main_notebook.ipynb](https://github.com/ksonod/itof_cyclic_error_simulator/blob/main/main_notebook.ipynb), which includes some examples from academic papers. [[1](https://ieeexplore.ieee.org/document/7391811), [2](https://www.mdpi.com/2304-6732/10/2/170)].
