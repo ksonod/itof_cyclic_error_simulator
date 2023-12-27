@@ -21,7 +21,7 @@ class PhaseSimulator:
         self.calculate_phase_and_cyclic_error()
         return self.simulation_data
 
-    def prepare_basic_simulation_data(self):
+    def prepare_basic_simulation_data(self) -> SimulationData:
         """
         Prepare basic data for further simulation.
         """
@@ -110,7 +110,6 @@ class PhaseSimulator:
                 )
             )
             self.simulation_data.correlation_signal[f"component{comp_idx}"] = corr_signal/np.max(np.abs(corr_signal))
-        return 0
 
     def calculate_phase_and_cyclic_error(self):
         """

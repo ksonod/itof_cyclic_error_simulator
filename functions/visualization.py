@@ -5,6 +5,7 @@ from enum import Enum
 from data_model.simulation_data import SimulationData
 from functions.utils.math_calc import convert_rad_to_m
 
+
 class DepthUnit(Enum):
     METER = "Distance (m)"
     CENTIMETER = "Distance (cm)"
@@ -26,10 +27,11 @@ class DataVisualizer:
             self.show_phase_signals_and_cyclic_error(self.dat, self.figure_config)
 
     @staticmethod
-    def show_signals(dat: SimulationData, figure_config):
+    def show_signals(dat: SimulationData, figure_config: dict):
         """
         Show sensor and illumination signals
         :param dat: SimulationData
+        :param figure_config: Figure setting dictionary.
         """
 
         plt.figure(figsize=(11, 9))

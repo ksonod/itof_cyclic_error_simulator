@@ -18,7 +18,7 @@ CONFIG = {
 }
 
 
-def run_simulation(config):
+def run_simulation(config: dict):
 
     phase_simulator = PhaseSimulator(config)
     simulation_data = phase_simulator()
